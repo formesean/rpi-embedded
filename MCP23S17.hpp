@@ -1,8 +1,11 @@
 #ifndef MCP23S17_H
 #define MCP23S17_H
 
+#include <iostream>
 #include <cstdint>
 #include <stdexcept>
+#include <chrono>
+#include <thread>
 #include <pigpio.h>
 
 // Datasheet: https://ww1.microchip.com/downloads/aemDocuments/documents/APID/ProductDocuments/DataSheets/MCP23017-Data-Sheet-DS20001952.pdf
@@ -70,7 +73,7 @@ public:
     MCP23S17(uint8_t cs, uint8_t miso, uint8_t mosi, uint8_t sclk, uint32_t baud = SPI_SPEED);
     ~MCP23S17();
 
-    void setup();
+    void delay_ms(int milliseconds);
     void direction(PORT port, DIRECTION direction);
     void write(PORT port, uint8_t data);
     uint8_t read(PORT port);
