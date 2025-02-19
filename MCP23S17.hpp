@@ -29,21 +29,6 @@ private:
         WRITE = 0
     };
 
-    enum class REGISTER
-    {
-        IODIR = 0,
-        IPOL = 1,
-        GPINTEN = 2,
-        DEFVAL = 3,
-        INTCON = 4,
-        IOCON = 5,
-        GPPU = 6,
-        INTF = 7,
-        INTCAP = 8,
-        GPIO = 9,
-        OLAT = 0xA,
-    };
-
     enum class ADDR_BANK_0
     {
         IODIRA = 0x00,
@@ -71,27 +56,26 @@ private:
     };
 
 private:
-    const uint8_t CLIENT_ADDRESS_HEADER = 0x40;
-    const uint8_t m_hardware_address = 0x00;
-    bool m_IOCON_BANK = 0;
-    // For bit-bang SPI, we store the chip select pin as the identifier.
-    unsigned m_spi_cs;
+    static constexpr uint8_t MCP23S17_ADDR = 0x40;
+    static constexpr uint32_t SPI_SPEED = 250000;
+
+    uint8_t spiHandle;
+    uint8_t SPI_CE, SPI_MISO, SPI_MOSI, SPI_SCLK;
 
 private:
-    uint8_t control_byte(OPERATION op) const;
-    uint8_t register_address(REGISTER reg, PORT port) const;
-    uint8_t mcp_xfer(OPERATION op, REGISTER reg, PORT port, uint8_t data = 0x00);
-    virtual void spi_xfer(uint8_t *rxd, uint8_t *txd, unsigned length);
+    void writeRegister(uint8_t reg, uint8_t value);
+    uint8_t readRegister(uint8_t reg);
 
 public:
-    // Constructor using SPI bit-bang pins: sclk, mosi, miso, cs.
-    MCP23S17(uint8_t hardware_address, uint8_t sclk, uint8_t mosi, uint8_t miso, uint8_t cs, uint32_t baud = 250000);
-    // Destructor to close the SPI channel.
-    virtual ~MCP23S17();
+    MCP23S17(uint8_t cs, uint8_t miso, uint8_t mosi, uint8_t sclk, uint32_t baud = SPI_SPEED);
+    ~MCP23S17();
 
+    void setup();
     void direction(PORT port, DIRECTION direction);
-    uint8_t read(PORT port);
     void write(PORT port, uint8_t data);
+    uint8_t read(PORT port);
 };
 
 #endif
+
+// EOF
