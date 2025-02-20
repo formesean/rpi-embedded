@@ -1,5 +1,9 @@
+.vscode
+
 /*.exe
+*/*/build
+
 !/*.cpp
 !/*.hpp
-.vscode
+
 main
