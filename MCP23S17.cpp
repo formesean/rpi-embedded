@@ -54,10 +54,6 @@ void MCP23S17::writeRegister(uint8_t reg, uint8_t value)
     {
         std::cerr << "SPI Write Failed (status: " << status << ")\n";
     }
-    else
-    {
-        std::cout << "SPI Write Successful (status: " << status << ")\n";
-    }
 }
 
 uint8_t MCP23S17::readRegister(uint8_t reg)
@@ -71,11 +67,13 @@ uint8_t MCP23S17::readRegister(uint8_t reg)
         std::cerr << "SPI Read Failed (status: " << status << ")\n";
         return 0xFF;
     }
-    else
-    {
-        std::cout << "SPI Read Successful (status: " << status << ")\n";
-        return rxBuf[2]; // Received data is in the 3rd byte
-    }
+    return rxBuf[2]; // Received data is in the 3rd byte
+}
+
+void MCP23S17::enablePullup(PORT port, uint8_t mask)
+{
+    uint8_t reg = (port == PORT::A) ? static_cast<uint8_t>(ADDR_BANK_0::GPPUA) : static_cast<uint8_t>(ADDR_BANK_0::GPPUB);
+    writeRegister(reg, mask);
 }
 
 void MCP23S17::delay_ms(int milliseconds)

@@ -73,10 +73,12 @@ public:
     MCP23S17(uint8_t cs, uint8_t miso, uint8_t mosi, uint8_t sclk, uint32_t baud = SPI_SPEED);
     ~MCP23S17();
 
-    void delay_ms(int milliseconds);
     void direction(PORT port, DIRECTION direction);
     void write(PORT port, uint8_t data);
     uint8_t read(PORT port);
+
+    void enablePullup(PORT port, uint8_t mask);
+    void delay_ms(int milliseconds);
 };
 
 #endif
