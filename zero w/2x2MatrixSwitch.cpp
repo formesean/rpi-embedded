@@ -1,4 +1,4 @@
-#include "MCP23S17.hpp"
+#include "../lib/MCP23S17.hpp"
 
 #include <iostream>
 
