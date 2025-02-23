@@ -1,6 +1,0 @@
-[submodule "lib/AikaPi"]
-	path = lib/AikaPi
-	url = https://github.com/glenbenatiro/AikaPi.git
-[submodule "lib/MCP23S17"]
-	path = lib/MCP23S17
-	url = https://github.com/glenbenatiro/MCP23S17.git
