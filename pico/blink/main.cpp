@@ -1,24 +1,23 @@
-#include <pico/stdlib.h>
+#include "../../lib/SPICO/SPICO.hpp"
 
 #define LED_PIN 25
 
 int main()
 {
     stdio_init_all();
+    SPICO spico;
 
-    gpio_init(LED_PIN);
-    gpio_set_dir(LED_PIN, GPIO_OUT);
+    spico.pinMode(LED_PIN, SPICO::DIRECTION::OUTPUT);
 
     while (true)
     {
-        gpio_put(LED_PIN, 0x01);
-        sleep_ms(500);
+      spico.digitalWrite(LED_PIN, 1);
+      spico.delay(500);
 
-        gpio_put(LED_PIN, 0x00);
-        sleep_ms(500);
+      spico.digitalWrite(LED_PIN, 0);
+      spico.delay(500);
     }
 
-    return 0;
 }
 
 // EOF
