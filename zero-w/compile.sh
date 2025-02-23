@@ -11,7 +11,7 @@ MAIN_FILE=$1
 OUTPUT_NAME=${MAIN_FILE%.cpp}
 
 # Compile the file
-g++ -o "$OUTPUT_NAME" "$MAIN_FILE" ../lib/MCP23S17.cpp -lpigpio -lrt -pthread
+g++ -o "$OUTPUT_NAME" "$MAIN_FILE" ../lib/AikaPi/AikaPi.cpp ../lib/MCP23S17/MCP23S17.cpp -lpigpio -lrt -pthread
 
 # Check if compilation was successful
 if [ $? -eq 0 ]; then
