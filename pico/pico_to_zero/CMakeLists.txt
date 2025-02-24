@@ -15,9 +15,12 @@ pico_sdk_init()
 
 add_executable(${PROJECT_NAME}
     main.cpp
+    ../../lib/SPICO/SPICO.cpp
 )
 
-# Link to standard Pico libraries (fix)
+target_include_directories(${PROJECT_NAME} PRIVATE lib/SPICO)
+
+# Link to standard Pico libraries
 target_link_libraries(${PROJECT_NAME} pico_stdlib hardware_spi)
 
 # Create map/bin/hex files
