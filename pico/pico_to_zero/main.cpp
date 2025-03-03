@@ -3,7 +3,7 @@
 #include <string.h>
 
 #define SPI_PORT spi1
-#define SPI_BAUD 250000
+#define SPI_BAUD 1000000
 #define SCLK_PIN 10
 #define MOSI_PIN 11 // TX
 #define MISO_PIN 12 // RX
