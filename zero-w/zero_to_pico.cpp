@@ -4,7 +4,7 @@
 #include <pigpio.h>
 
 #define SPI_CHANNEL 2
-#define SPI_BAUD 250000 // Adjust as needed
+#define SPI_BAUD 1000000 // Adjust as needed
 #define SPI_MODE 0
 #define SPI_FLAG ((SPI_MODE << 14) | 0x100)
 #define CS_PIN 16
