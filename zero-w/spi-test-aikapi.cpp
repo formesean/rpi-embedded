@@ -2,11 +2,14 @@
 
 #include <iostream>
 #include <iomanip>
+#include <thread>
+#include <chrono>
 
 #define CS_PIN 16
 #define MISO_PIN 19
 #define MOSI_PIN 20
 #define SCLK_PIN 21
+#define BAUD_RATE 500
 
 #define BUFFER_SIZE 17
 
@@ -15,21 +18,18 @@ int main()
   AikaPi &rpi = AikaPi::get_instance();
 
   // Enable AUX SPI1 peripheral
-  rpi.aux.master_enable_spi(1);
+  rpi.aux.master_enable_spi(0);
 
   // GPIO pins for SPI1
   rpi.gpio.set(SCLK_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
-  rpi.gpio.set(MOSI_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
-  rpi.gpio.set(MISO_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::DOWN);
+  rpi.gpio.set(MOSI_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::DOWN);
+  rpi.gpio.set(MISO_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
 
-  auto &spi1 = rpi.aux.spi(1);
+  auto &spi1 = rpi.aux.spi(0);
 
   // SPI settings
-  spi1.mode(AP::SPI::MODE::_0);
-  spi1.frequency(1000000);
-  spi1.shift_in_ms_bit_first(true);
-  spi1.cs_polarity(true);
-  spi1.clear_fifos();
+  spi1.enable();
+  spi1.frequency(BAUD_RATE);
 
   while (true)
   {
@@ -41,7 +41,7 @@ int main()
       tx_buffer[i] = static_cast<char>(i);
     }
 
-    spi1.xfer(rx_buffer, tx_buffer, BUFFER_SIZE, 2);
+    spi1.xfer(rx_buffer, tx_buffer, BUFFER_SIZE);
 
     bool match = true;
     for (int i = 0; i < BUFFER_SIZE; i++)
@@ -71,6 +71,9 @@ int main()
     std::cout << "\nMatch: " << (match ? "YES" : "NO")
               << "\n"
               << std::endl;
+
+    int delay_ms = (BUFFER_SIZE * 8 * 1000) / BAUD_RATE;
+    std::this_thread::sleep_for(std::chrono::milliseconds(delay_ms));
   }
 
   return 0;
