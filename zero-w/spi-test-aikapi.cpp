@@ -9,7 +9,7 @@
 #define MISO_PIN 19
 #define MOSI_PIN 20
 #define SCLK_PIN 21
-#define BAUD_RATE 500
+#define BAUD_RATE 1000000
 
 #define BUFFER_SIZE 17
 
