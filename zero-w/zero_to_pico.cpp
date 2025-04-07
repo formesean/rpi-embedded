@@ -1,71 +1,67 @@
+#include "../lib/AikaPi/AikaPi.h"
+
 #include <iostream>
 #include <iomanip>
+#include <thread>
+#include <chrono>
+#include <string>
 
-#include <pigpio.h>
-
-#define SPI_CHANNEL 2
-#define SPI_BAUD 1000000 // Adjust as needed
-#define SPI_MODE 0
-#define SPI_FLAG ((SPI_MODE << 14) | 0x100)
 #define CS_PIN 16
 #define MISO_PIN 19
 #define MOSI_PIN 20
 #define SCLK_PIN 21
+#define BAUD_RATE 1000000
 
 #define BUFFER_SIZE 17
 
-// 21 20 19 18 17 16 15 14 13 12 11 10  9  8  7  6  5  4  3  2  1  0
-//  b  b  b  b  b  b  R  T  n  n  n  n  W  A u2 u1 u0 p2 p1 p0  m  m
-
-//  01 0000 0000 0001 0000 0000
-
 int main()
 {
-  if (gpioInitialise() < 0)
+  try
   {
-    throw std::runtime_error("pigpio initialization failed!");
-  }
+    AikaPi &rpi = AikaPi::get_instance();
+    rpi.aux.master_enable_spi(0);
 
-  int spi_handle = spiOpen(SPI_CHANNEL, SPI_BAUD, SPI_FLAG);
+    rpi.gpio.set(SCLK_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
+    rpi.gpio.set(MOSI_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::DOWN);
+    rpi.gpio.set(MISO_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
+    rpi.gpio.set(CS_PIN, AP::GPIO::FUNC::OUTPUT, AP::GPIO::PULL::UP);
+    rpi.gpio.write(CS_PIN, true);
 
-  if (spi_handle < 0)
-  {
-    gpioTerminate();
-    throw std::runtime_error("Failed to open SPI!");
-  }
+    auto &spi1 = rpi.aux.spi(0);
 
-  std::string accumulatedMessage; // Persistent buffer
+    // SPI settings
+    spi1.enable();
+    spi1.frequency(BAUD_RATE);
 
-  while (true)
-  {
-    char tx_buffer[BUFFER_SIZE] = {0x00}; // Send dummy bytes
-    char rx_buffer[BUFFER_SIZE] = {0};    // Receive buffer
+    // Persistent message buffer
+    std::string accumulatedMessage;
 
-    int result = spiXfer(spi_handle, tx_buffer, rx_buffer, BUFFER_SIZE);
-    if (result >= 0)
+    while (true)
     {
-      // Append received characters to the accumulated message
+      char tx_buffer[BUFFER_SIZE] = {0x00};
+      char rx_buffer[BUFFER_SIZE] = {0};
+
+      rpi.gpio.write(CS_PIN, false);
+      spi1.xfer(rx_buffer, tx_buffer, BUFFER_SIZE);
+      rpi.gpio.write(CS_PIN, true);
+
       for (int i = 0; i < BUFFER_SIZE; i++)
       {
         if (rx_buffer[i] == '\0')
           break;
-
         if (rx_buffer[i] >= 32 && rx_buffer[i] <= 126)
           accumulatedMessage += rx_buffer[i];
       }
 
-      // Print accumulated message
       std::cout << "Received Message: " << accumulatedMessage << std::endl;
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
-    else
-    {
-      std::cerr << "SPI transfer failed!" << std::endl;
-    }
-
-    gpioDelay(500000);
+  }
+  catch (const std::exception &e)
+  {
+    std::cerr << "Exception: " << e.what() << std::endl;
+    return -1;
   }
 
-  spiClose(spi_handle);
-  gpioTerminate();
   return 0;
 }
