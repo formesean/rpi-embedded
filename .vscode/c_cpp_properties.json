@@ -8,7 +8,6 @@
         "D:\\pico-sdk\\src\\**",
         "D:\\pico-sdk\\src\\rp2040\\**",
         "${workspaceFolder}\\lib\\AikaPi\\**",
-        "${workspaceFolder}\\lib\\MCP23S17\\**",
         "${workspaceFolder}/lib"
       ],
       "defines": ["_DEBUG", "UNICODE", "_UNICODE"],

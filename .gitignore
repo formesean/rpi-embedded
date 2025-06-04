@@ -4,11 +4,10 @@
 
 !/*.cpp
 !/*.hpp
+!*.sh
 
 main
-zero-w/blinkingLED
-zero-w/switchLED
-zero-w/2x2MatrixSwitch
-zero-w/zero_to_pico
-zero-w/spi-test-aikapi
-zero-w/spi-test-pigpio
+
+zero-w/*
+!zero-w/*.cpp
+!zero-w/*.sh
