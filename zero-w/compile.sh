@@ -6,16 +6,64 @@ if [ -z "$1" ]; then
   exit 1
 fi
 
-# Extract the main file name without extension
 MAIN_FILE=$1
 OUTPUT_NAME=${MAIN_FILE%.cpp}
 
-# Compile the file
-g++ -o "$OUTPUT_NAME" "$MAIN_FILE" ../lib/AikaPi/AikaPi.cpp ../lib/MCP23S17/MCP23S17.cpp -lpigpio -lrt -pthread
+# Source files
+SOURCES=(
+  "$MAIN_FILE"
+  "../lib/AikaPi/AikaPi.cpp"
+)
 
-# Check if compilation was successful
-if [ $? -eq 0 ]; then
-  echo "Compilation successful. Run ./$OUTPUT_NAME"
+OBJECTS=()
+COMPILED=0
+TOTAL=${#SOURCES[@]}
+
+start_time=$(date +%s)
+
+# Progress bar
+show_progress() {
+  local width=40
+  local percent=$((COMPILED * 100 / TOTAL))
+  local filled=$((COMPILED * width / TOTAL))
+  local empty=$((width - filled))
+
+  bar=$(printf "%0.s#" $(seq 1 $filled))
+  space=$(printf "%0.s." $(seq 1 $empty))
+
+  echo -ne "\r[${bar}${space}] ${percent}% (${COMPILED}/${TOTAL})"
+}
+
+echo "Compiling sources..."
+
+# Compile each source file to object file
+for src in "${SOURCES[@]}"; do
+  obj="${src##*/}"
+  obj="${obj%.cpp}.o"
+  g++ -c "$src" -o "$obj" -pthread
+  if [ $? -ne 0 ]; then
+    echo -e "\nCompilation failed at $src"
+    exit 1
+  fi
+  OBJECTS+=("$obj")
+  COMPILED=$((COMPILED + 1))
+  show_progress
+done
+
+# Link object files
+echo -ne "\nLinking...\n"
+g++ -o "$OUTPUT_NAME" "${OBJECTS[@]}" -pthread
+status=$?
+
+end_time=$(date +%s)
+elapsed=$((end_time - start_time))
+
+# Cleanup object files
+rm -f "${OBJECTS[@]}"
+
+# Result
+if [ $status -eq 0 ]; then
+  echo "Build complete in ${elapsed}s. Run ./$OUTPUT_NAME"
 else
-  echo "Compilation failed."
+  echo "Linking failed after ${elapsed}s."
 fi
