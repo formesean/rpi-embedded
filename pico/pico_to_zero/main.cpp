@@ -5,7 +5,7 @@
 #include <iostream>
 #include <cstdint>
 
-#define PACKET_SIZE 4
+#define PACKET_SIZE 2
 
 constexpr uint32_t SPI_BAUD = 1000000;
 constexpr uint8_t PIN_SCK = 10;
@@ -16,7 +16,6 @@ constexpr uint8_t PIN_CS = 13;
 void wait_for_usb_connect();
 void spi_slave_init();
 void sendTestData();
-void sendBufferData(const uint8_t *buffer);
 
 int main()
 {
@@ -26,7 +25,7 @@ int main()
   while (true)
   {
     sendTestData();
-    tight_loop_contents();
+    sleep_ms(100);
   }
 }
 
@@ -44,6 +43,7 @@ void wait_for_usb_connect()
 void spi_slave_init()
 {
   spi_init(spi1, SPI_BAUD);
+  spi_set_format(spi1, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
   spi_set_slave(spi1, true);
 
   gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
@@ -55,20 +55,26 @@ void spi_slave_init()
 void sendTestData()
 {
   uint8_t ready_packet[4] = {0x01, 0x02, 0x01, 0x01 ^ 0x02 ^ 0x01};
+
   uint8_t high_byte = ((ready_packet[0] & 0x0F) << 4) | (ready_packet[1] & 0x0F);
   uint8_t low_byte = ((ready_packet[2] & 0x0F) << 4) | (ready_packet[3] & 0x0F);
-  uint16_t packed = (high_byte << 8) | low_byte;
 
-  spi_write16_blocking(spi1, &packed, PACKET_SIZE);
+  uint16_t tx_data = (static_cast<uint16_t>(high_byte) << 8) | low_byte;
+  uint16_t rx_dummy = 0;
 
-  printf("Packed value: 0x%04X\n", packed);
+  int result = spi_write16_read16_blocking(spi1, &tx_data, &rx_dummy, 1);
+
+  if (result == 1)
+  {
+    printf("Packet Sent: 0x%04X (bytes: 0x%02X 0x%02X)\n",
+           tx_data, high_byte, low_byte);
+  }
+  else
+  {
+    printf("SPI transfer failed\n");
+  }
+
   fflush(stdout);
-}
-
-void sendBufferData(const uint8_t *buffer)
-{
-  uint8_t data_in[4] = {0};
-  spi_write_read_blocking(spi1, (uint8_t *)buffer, data_in, 4);
 }
 
 // EOF
