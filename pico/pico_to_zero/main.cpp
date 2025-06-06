@@ -1,58 +1,59 @@
-#include <pico/stdlib.h>
-#include <hardware/gpio.h>
-#include <hardware/spi.h>
-#include <hardware/irq.h>
-#include <hardware/sync.h>
-#include <stdio.h>
-#include <cstdint>
-#include <cstdlib>
+#include "pico/stdlib.h"
+#include "hardware/spi.h"
 
-#define SPI_PORT spi1
-#define SPI_BAUD 1000000
-#define SCLK_PIN 10
-#define MOSI_PIN 11 // TX
-#define MISO_PIN 12 // RX
-#define CS_PIN 13
+#include <cstdint>
 
 #define PACKET_SIZE 4
 
-const uint8_t packet[PACKET_SIZE] = {
-    0x01,              // Type
-    0x02,              // Action
-    0x01,              // Value
-    0x01 ^ 0x02 ^ 0x01 // Checksum
-};
+constexpr uint32_t SPI_BAUD = 1000000;
+constexpr uint8_t PIN_SCK = 10;
+constexpr uint8_t PIN_MISO = 11;
+constexpr uint8_t PIN_MOSI = 12;
+constexpr uint8_t PIN_CS = 13;
 
-void spi_slave_task()
-{
-  uint8_t index = 0;
-
-  while (true)
-  {
-    if (spi_is_readable(SPI_PORT))
-    {
-      // Always preload TX FIFO first
-      if (spi_is_writable(SPI_PORT))
-        spi_get_hw(SPI_PORT)->dr = packet[index];
-
-      volatile uint8_t discard = spi_get_hw(SPI_PORT)->dr;
-
-      index = (index + 1) % PACKET_SIZE;
-    }
-  }
-}
+void spi_slave_init();
+void sendTestData();
+void sendBufferData(const uint8_t *buffer);
 
 int main()
 {
   stdio_init_all();
+  spi_slave_init();
 
-  spi_init(SPI_PORT, SPI_BAUD);
-  spi_set_slave(spi1, true);
-  gpio_set_function(MISO_PIN, GPIO_FUNC_SPI);
-  gpio_set_function(SCLK_PIN, GPIO_FUNC_SPI);
-  gpio_set_function(MOSI_PIN, GPIO_FUNC_SPI);
-  gpio_set_function(CS_PIN, GPIO_FUNC_SPI);
+  while (true)
+  {
+    while (gpio_get(PIN_CS))
+      tight_loop_contents();
 
-  spi_slave_task();
-  return 0;
+    sendTestData();
+
+    while (!gpio_get(PIN_CS))
+      tight_loop_contents();
+  }
 }
+
+void spi_slave_init()
+{
+  spi_init(spi1, SPI_BAUD);
+  spi_set_slave(spi1, true);
+
+  gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
+  gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
+  gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
+  gpio_set_function(PIN_CS, GPIO_FUNC_SPI);
+}
+
+void sendTestData()
+{
+  uint8_t data_out[4] = {0xA1, 0xB2, 0xC3, 0xD4};
+  uint8_t data_in[4] = {0};
+  spi_write_read_blocking(spi1, data_out, data_in, 4);
+}
+
+void sendBufferData(const uint8_t *buffer)
+{
+  uint8_t data_in[4] = {0};
+  spi_write_read_blocking(spi1, (uint8_t *)buffer, data_in, 4);
+}
+
+// EOF

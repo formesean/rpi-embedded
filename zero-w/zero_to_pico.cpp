@@ -38,7 +38,15 @@ int main()
       char rx_buffer[PACKET_SIZE] = {0};
 
       rpi.gpio.write(CS_PIN, false);
-      spi1.xfer(rx_buffer, tx_buffer, PACKET_SIZE);
+
+      for (int i = 0; i < PACKET_SIZE; ++i)
+      {
+        char tx = tx_buffer[i];
+        char rx;
+        spi1.xfer(&rx, &tx, 1); // send/receive 1 byte
+        rx_buffer[i] = rx;
+      }
+
       rpi.gpio.write(CS_PIN, true);
 
       uint8_t type = rx_buffer[0];
