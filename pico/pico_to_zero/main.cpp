@@ -1,6 +1,11 @@
-#include "../../lib/SPICO/SPICO.hpp"
-
-#include <string.h>
+#include <pico/stdlib.h>
+#include <hardware/gpio.h>
+#include <hardware/spi.h>
+#include <hardware/irq.h>
+#include <hardware/sync.h>
+#include <stdio.h>
+#include <cstdint>
+#include <cstdlib>
 
 #define SPI_PORT spi1
 #define SPI_BAUD 1000000
@@ -11,20 +16,29 @@
 
 #define PACKET_SIZE 4
 
+const uint8_t packet[PACKET_SIZE] = {
+    0x01,              // Type
+    0x02,              // Action
+    0x01,              // Value
+    0x01 ^ 0x02 ^ 0x01 // Checksum
+};
+
 void spi_slave_task()
 {
-  uint8_t tx_buffer[PACKET_SIZE] = {0x01, 0x02, 0x01, 0x02}; // Type, Action, Value, Checksum
-  uint8_t rx_buffer[PACKET_SIZE] = {0};
-
-  // Calculate checksum
-  tx_buffer[3] = tx_buffer[0] ^ tx_buffer[1] ^ tx_buffer[2];
-
-  memcpy(tx_buffer, message, PACKET_SIZE); // Load message
+  uint8_t index = 0;
 
   while (true)
   {
-    spi_write_blocking(SPI_PORT, tx_buffer, PACKET_SIZE);
-    spi_read_blocking(SPI_PORT, 0, rx_buffer, PACKET_SIZE);
+    if (spi_is_readable(SPI_PORT))
+    {
+      // Always preload TX FIFO first
+      if (spi_is_writable(SPI_PORT))
+        spi_get_hw(SPI_PORT)->dr = packet[index];
+
+      volatile uint8_t discard = spi_get_hw(SPI_PORT)->dr;
+
+      index = (index + 1) % PACKET_SIZE;
+    }
   }
 }
 
