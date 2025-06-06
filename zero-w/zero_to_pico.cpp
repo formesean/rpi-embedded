@@ -12,7 +12,7 @@
 #define SCLK_PIN 21
 #define BAUD_RATE 1000000
 
-#define PACKET_SIZE 4
+#define PACKET_SIZE 2
 
 int main()
 {
@@ -34,34 +34,16 @@ int main()
 
     while (true)
     {
-      char tx_buffer[PACKET_SIZE] = {0x00};
       char rx_buffer[PACKET_SIZE] = {0};
+      char tx_buffer[PACKET_SIZE] = {0}; // Dummy data
 
       rpi.gpio.write(CS_PIN, false);
-
-      for (int i = 0; i < PACKET_SIZE; ++i)
-      {
-        char tx = tx_buffer[i];
-        char rx;
-        spi1.xfer(&rx, &tx, 1); // send/receive 1 byte
-        rx_buffer[i] = rx;
-      }
-
+      spi1.xfer(rx_buffer, tx_buffer, PACKET_SIZE);
       rpi.gpio.write(CS_PIN, true);
 
-      uint8_t type = rx_buffer[0];
-      uint8_t action = rx_buffer[1];
-      uint8_t value = rx_buffer[2];
-      uint8_t checksum = rx_buffer[3];
-      bool valid = ((type ^ action ^ value) == checksum);
+      uint16_t packet = (static_cast<uint8_t>(rx_buffer[0]) << 8) | static_cast<uint8_t>(rx_buffer[1]);
 
-      std::cout << "Received Packet: ";
-      for (int i = 0; i < PACKET_SIZE; ++i)
-      {
-        std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << +rx_buffer[i] << " ";
-      }
-
-      std::cout << "| Valid: " << std::boolalpha << valid << std::endl;
+      std::cout << "Received Packed Value: 0x" << std::hex << std::setw(4) << std::setfill('0') << packet << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
   }
@@ -73,3 +55,5 @@ int main()
 
   return 0;
 }
+
+// EOF

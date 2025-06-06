@@ -63,6 +63,15 @@
     "thread": "cpp",
     "cinttypes": "cpp",
     "typeinfo": "cpp",
-    "variant": "cpp"
+    "variant": "cpp",
+    "codecvt": "cpp",
+    "csignal": "cpp",
+    "cuchar": "cpp",
+    "forward_list": "cpp",
+    "map": "cpp",
+    "set": "cpp",
+    "regex": "cpp",
+    "ranges": "cpp",
+    "valarray": "cpp"
   }
 }
