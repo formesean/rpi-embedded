@@ -12,7 +12,7 @@
 #define SCLK_PIN 21
 #define BAUD_RATE 1000000
 
-#define BUFFER_SIZE 17
+#define PACKET_SIZE 4
 
 int main()
 {
@@ -27,33 +27,33 @@ int main()
     rpi.gpio.set(CS_PIN, AP::GPIO::FUNC::OUTPUT, AP::GPIO::PULL::UP);
     rpi.gpio.write(CS_PIN, true);
 
-    auto &spi1 = rpi.aux.spi(0);
-
     // SPI settings
+    auto &spi1 = rpi.aux.spi(0);
     spi1.enable();
     spi1.frequency(BAUD_RATE);
 
-    // Persistent message buffer
-    std::string accumulatedMessage;
-
     while (true)
     {
-      char tx_buffer[BUFFER_SIZE] = {0x00};
-      char rx_buffer[BUFFER_SIZE] = {0};
+      char tx_buffer[PACKET_SIZE] = {0x00};
+      char rx_buffer[PACKET_SIZE] = {0};
 
       rpi.gpio.write(CS_PIN, false);
-      spi1.xfer(rx_buffer, tx_buffer, BUFFER_SIZE);
+      spi1.xfer(reinterpret_cast<char *>(rx_buffer), reinterpret_cast<char *>(tx_buffer), PACKET_SIZE);
       rpi.gpio.write(CS_PIN, true);
 
-      for (int i = 0; i < BUFFER_SIZE; i++)
+      uint8_t type = rx_buffer[0];
+      uint8_t action = rx_buffer[1];
+      uint8_t value = rx_buffer[2];
+      uint8_t checksum = rx_buffer[3];
+      bool valid = ((type ^ action ^ value) == checksum);
+
+      std::cout << "Received Packet: ";
+      for (int i = 0; i < PACKET_SIZE; ++i)
       {
-        if (rx_buffer[i] == '\0')
-          break;
-        if (rx_buffer[i] >= 32 && rx_buffer[i] <= 126)
-          accumulatedMessage += rx_buffer[i];
+        std::cout << "0x" << std::hex << std::setw(2) << std::setfill('0') << +rx_buffer[i] << " ";
       }
 
-      std::cout << "Received Message: " << accumulatedMessage << std::endl;
+      std::cout << "| Valid: " << std::boolalpha << valid << std::endl;
       std::this_thread::sleep_for(std::chrono::milliseconds(500));
     }
   }

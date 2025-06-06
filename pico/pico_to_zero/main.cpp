@@ -9,20 +9,22 @@
 #define MISO_PIN 12 // RX
 #define CS_PIN 13
 
-#define BUFFER_SIZE 17
-const char message[BUFFER_SIZE] = "Hello from Pico!";
+#define PACKET_SIZE 4
 
 void spi_slave_task()
 {
-  uint8_t tx_buffer[BUFFER_SIZE];       // Transmit buffer
-  uint8_t rx_buffer[BUFFER_SIZE] = {0}; // Receive buffer
+  uint8_t tx_buffer[PACKET_SIZE] = {0x01, 0x02, 0x01, 0x02}; // Type, Action, Value, Checksum
+  uint8_t rx_buffer[PACKET_SIZE] = {0};
 
-  memcpy(tx_buffer, message, BUFFER_SIZE); // Load message
+  // Calculate checksum
+  tx_buffer[3] = tx_buffer[0] ^ tx_buffer[1] ^ tx_buffer[2];
+
+  memcpy(tx_buffer, message, PACKET_SIZE); // Load message
 
   while (true)
   {
-    spi_write_blocking(SPI_PORT, tx_buffer, BUFFER_SIZE);
-    spi_read_blocking(SPI_PORT, 0, rx_buffer, BUFFER_SIZE);
+    spi_write_blocking(SPI_PORT, tx_buffer, PACKET_SIZE);
+    spi_read_blocking(SPI_PORT, 0, rx_buffer, PACKET_SIZE);
   }
 }
 
