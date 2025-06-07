@@ -6,46 +6,13 @@
 #include <chrono>
 #include <string>
 
-constexpr uint32_t SPI_BAUD = 1000000;
-constexpr uint8_t PIN_SCK = 10;
-constexpr uint8_t PIN_MISO = 11;
-constexpr uint8_t PIN_MOSI = 12;
-constexpr uint8_t PIN_CS = 13;
+#define BAUD_RATE 1000000
+#define CS_PIN 16
+#define MISO_PIN 19
+#define MOSI_PIN 20
+#define SCLK_PIN 21
 
-constexpr size_t PACKET_SIZE = 4;
-
-enum class PacketType : uint8_t
-{
-  MacroKey = 0x01,
-  EncoderRotate = 0x02,
-  EncoderSwitch = 0x03,
-};
-
-void print_packet(uint8_t type, uint8_t action, uint8_t value, uint8_t checksum, bool valid)
-{
-  std::string type_str;
-  switch (static_cast<PacketType>(type))
-  {
-  case PacketType::MacroKey:
-    type_str = "0x01";
-    break;
-  case PacketType::EncoderRotate:
-    type_str = "0x02";
-    break;
-  case PacketType::EncoderSwitch:
-    type_str = "0x03";
-    break;
-  default:
-    type_str = "0x00";
-    break;
-  }
-
-  std::cout << "Received - " << type_str << " 0x"
-            << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(action)
-            << " 0x" << std::setw(2) << static_cast<int>(value)
-            << " 0x" << std::setw(2) << static_cast<int>(checksum)
-            << " [" << (valid ? "VALID" : "INVALID") << "]" << std::dec << std::endl;
-}
+#define PACKET_SIZE 2
 
 int main()
 {
@@ -54,59 +21,93 @@ int main()
     AikaPi &rpi = AikaPi::get_instance();
     rpi.aux.master_enable_spi(0);
 
-    rpi.gpio.set(PIN_SCK, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
-    rpi.gpio.set(PIN_MISO, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
-    rpi.gpio.set(PIN_MOSI, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::DOWN);
-    rpi.gpio.set(PIN_CS, AP::GPIO::FUNC::OUTPUT, AP::GPIO::PULL::UP);
-    rpi.gpio.write(PIN_CS, true);
+    rpi.gpio.set(SCLK_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
+    rpi.gpio.set(MISO_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
+    rpi.gpio.set(MOSI_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
+    rpi.gpio.set(CS_PIN, AP::GPIO::FUNC::OUTPUT, AP::GPIO::PULL::UP);
+    rpi.gpio.write(CS_PIN, true);
 
     auto &spi1 = rpi.aux.spi(0);
-
-    // SPI settings
     spi1.enable();
-    spi1.frequency(SPI_BAUD);
+    spi1.frequency(BAUD_RATE);
 
-    std::cout << "Starting SPI communication with Pico..." << std::endl;
-    std::cout << "Polling for packets every 100ms" << std::endl;
-
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     while (true)
     {
-      char tx_buffer[PACKET_SIZE] = {0x00};
-      char rx_buffer[PACKET_SIZE] = {0};
-
-      rpi.gpio.write(PIN_CS, false);
-      std::this_thread::sleep_for(std::chrono::microseconds(10));
-
-      spi1.xfer(rx_buffer, tx_buffer, PACKET_SIZE);
-
-      std::this_thread::sleep_for(std::chrono::microseconds(10));
-      rpi.gpio.write(PIN_CS, true);
-
-      uint8_t type = static_cast<uint8_t>(rx_buffer[0]);
-      uint8_t action = static_cast<uint8_t>(rx_buffer[1]);
-      uint8_t value = static_cast<uint8_t>(rx_buffer[2]);
-      uint8_t checksum = static_cast<uint8_t>(rx_buffer[3]);
-
-      bool has_data = (type != 0 || action != 0 || value != 0 || checksum != 0);
-
-      if (has_data)
+      try
       {
-        bool valid_checksum = (checksum == (type ^ action ^ value));
+        uint8_t rx_buffer[PACKET_SIZE] = {0};
+        uint8_t tx_buffer[PACKET_SIZE] = {0x00, 0x00};
 
-        if (valid_checksum && type >= 0x01 && type <= 0x03)
-          print_packet(type, action, value, checksum, valid_checksum);
-        else if (!valid_checksum)
-          std::cout << "Invalid packet received - checksum mismatch" << std::endl;
+        rpi.gpio.write(CS_PIN, false);
+        std::this_thread::sleep_for(std::chrono::microseconds(50));
+
+        spi1.xfer(reinterpret_cast<char *>(rx_buffer),
+                  reinterpret_cast<char *>(tx_buffer),
+                  PACKET_SIZE);
+
+        std::this_thread::sleep_for(std::chrono::microseconds(50));
+        rpi.gpio.write(CS_PIN, true);
+
+        uint16_t packet = (static_cast<uint16_t>(rx_buffer[0]) << 8) |
+                          static_cast<uint16_t>(rx_buffer[1]);
+
+        std::cout << "Received: 0x"
+                  << std::hex << std::setw(4) << std::setfill('0') << packet;
+
+        std::cout << " (0x" << std::setw(2) << static_cast<int>(rx_buffer[0])
+                  << " 0x" << std::setw(2) << static_cast<int>(rx_buffer[1]) << ")";
+
+        if (packet != 0x0000 && packet != 0xFFFF)
+        {
+          uint8_t high_byte = rx_buffer[0];
+          uint8_t low_byte = rx_buffer[1];
+
+          uint8_t type = (high_byte >> 4) & 0x0F;
+          uint8_t action = high_byte & 0x0F;
+          uint8_t value = (low_byte >> 4) & 0x0F;
+          uint8_t checksum = low_byte & 0x0F;
+
+          uint8_t expected_checksum = type ^ action ^ value;
+
+          std::cout << " -> Values: [" << std::hex
+                    << "0x" << static_cast<int>(type) << " "
+                    << "0x" << static_cast<int>(action) << " "
+                    << "0x" << static_cast<int>(value) << " "
+                    << "0x" << static_cast<int>(checksum) << "]";
+
+          if (checksum == expected_checksum)
+          {
+            std::cout << " ✓ VALID";
+          }
+          else
+          {
+            std::cout << " ✗ CHECKSUM ERROR (expected 0x"
+                      << static_cast<int>(expected_checksum) << ")";
+          }
+        }
+        else
+        {
+          std::cout << " (no valid data)";
+        }
+
+        std::cout << std::dec << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(200));
       }
-
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      catch (const std::exception &inner_e)
+      {
+        std::cerr << "Transaction error: " << inner_e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      }
     }
   }
   catch (const std::exception &e)
   {
-    std::cerr << "Exception: " << e.what() << std::endl;
+    std::cerr << "Initialization error: " << e.what() << std::endl;
     return -1;
   }
 
   return 0;
 }
+
+// EOF
