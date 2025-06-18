@@ -1,5 +1,5 @@
 {
-  "C_Cpp.errorSquiggles": "enabled",
+  "C_Cpp.errorSquiggles": "disabled",
   "cmake.sourceDirectory": "D:/rpi-embedded/pico/blink_led/build/_deps/picotool-src",
   "files.associations": {
     "any": "cpp",
