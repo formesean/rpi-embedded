@@ -6,7 +6,7 @@
 #include <chrono>
 #include <string>
 
-#define BAUD_RATE 1000000
+#define BAUD_RATE 20000000
 #define CS_PIN 16
 #define MISO_PIN 19
 #define MOSI_PIN 20
