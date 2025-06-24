@@ -52,14 +52,14 @@ int main()
         uint16_t packet = (static_cast<uint16_t>(rx_buffer[0]) << 8) |
                           static_cast<uint16_t>(rx_buffer[1]);
 
+	if (packet != 0x0000 && packet != 0xFFFF)
+	{
         std::cout << "Received: 0x"
                   << std::hex << std::setw(4) << std::setfill('0') << packet;
 
         std::cout << " (0x" << std::setw(2) << static_cast<int>(rx_buffer[0])
                   << " 0x" << std::setw(2) << static_cast<int>(rx_buffer[1]) << ")";
 
-        if (packet != 0x0000 && packet != 0xFFFF)
-        {
           uint8_t high_byte = rx_buffer[0];
           uint8_t low_byte = rx_buffer[1];
 
@@ -85,19 +85,14 @@ int main()
             std::cout << " ✗ CHECKSUM ERROR (expected 0x"
                       << static_cast<int>(expected_checksum) << ")";
           }
-        }
-        else
-        {
-          std::cout << " (no valid data)";
-        }
+        
 
-        std::cout << std::dec << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        	std::cout << std::dec << std::endl;
+      	}
       }
       catch (const std::exception &inner_e)
       {
         std::cerr << "Transaction error: " << inner_e.what() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
       }
     }
   }
