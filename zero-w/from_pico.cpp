@@ -40,64 +40,48 @@ int main()
         uint8_t tx_buffer[PACKET_SIZE] = {0x00, 0x00};
 
         rpi.gpio.write(CS_PIN, false);
-        std::this_thread::sleep_for(std::chrono::microseconds(50));
+        std::this_thread::sleep_for(std::chrono::microseconds(5)); // small CS setup delay
 
         spi1.xfer(reinterpret_cast<char *>(rx_buffer),
                   reinterpret_cast<char *>(tx_buffer),
                   PACKET_SIZE);
 
-        std::this_thread::sleep_for(std::chrono::microseconds(50));
         rpi.gpio.write(CS_PIN, true);
 
-        uint16_t packet = (static_cast<uint16_t>(rx_buffer[0]) << 8) |
-                          static_cast<uint16_t>(rx_buffer[1]);
+        uint16_t packet = (rx_buffer[0] << 8) | rx_buffer[1];
 
-        std::cout << "Received: 0x"
-                  << std::hex << std::setw(4) << std::setfill('0') << packet;
-
-        std::cout << " (0x" << std::setw(2) << static_cast<int>(rx_buffer[0])
-                  << " 0x" << std::setw(2) << static_cast<int>(rx_buffer[1]) << ")";
-
-        if (packet != 0x0000 && packet != 0xFFFF)
+        if (packet == 0x0000 || packet == 0xFFFF)
         {
-          uint8_t high_byte = rx_buffer[0];
-          uint8_t low_byte = rx_buffer[1];
-
-          uint8_t type = (high_byte >> 4) & 0x0F;
-          uint8_t action = high_byte & 0x0F;
-          uint8_t value = (low_byte >> 4) & 0x0F;
-          uint8_t checksum = low_byte & 0x0F;
-
-          uint8_t expected_checksum = type ^ action ^ value;
-
-          std::cout << " -> Values: [" << std::hex
-                    << "0x" << static_cast<int>(type) << " "
-                    << "0x" << static_cast<int>(action) << " "
-                    << "0x" << static_cast<int>(value) << " "
-                    << "0x" << static_cast<int>(checksum) << "]";
-
-          if (checksum == expected_checksum)
-          {
-            std::cout << " ✓ VALID";
-          }
-          else
-          {
-            std::cout << " ✗ CHECKSUM ERROR (expected 0x"
-                      << static_cast<int>(expected_checksum) << ")";
-          }
+          std::this_thread::sleep_for(std::chrono::milliseconds(10));
+          continue;
         }
+
+        uint8_t high_byte = rx_buffer[0];
+        uint8_t low_byte = rx_buffer[1];
+
+        uint8_t type = (high_byte >> 4) & 0x0F;
+        uint8_t action = high_byte & 0x0F;
+        uint8_t value = (low_byte >> 4) & 0x0F;
+        uint8_t checksum = low_byte & 0x0F;
+        uint8_t expected_checksum = type ^ action ^ value;
+
+        std::cout << "Packet: ["
+                  << "Type=0x" << std::hex << static_cast<int>(type) << " "
+                  << "Action=0x" << static_cast<int>(action) << " "
+                  << "Value=0x" << static_cast<int>(value) << " "
+                  << "Checksum=0x" << static_cast<int>(checksum) << "]";
+
+        if (checksum == expected_checksum)
+          std::cout << " ✓ VALID" << std::endl;
         else
-        {
-          std::cout << " (no valid data)";
-        }
+          std::cout << " ✗ INVALID (expected 0x" << static_cast<int>(expected_checksum) << ")" << std::endl;
 
-        std::cout << std::dec << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
       }
-      catch (const std::exception &inner_e)
+      catch (const std::exception &e)
       {
-        std::cerr << "Transaction error: " << inner_e.what() << std::endl;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+        std::cerr << "SPI error: " << e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
       }
     }
   }
