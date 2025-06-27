@@ -65,9 +65,10 @@ int main()
         uint8_t checksum = low_byte & 0x0F;
         uint8_t expected_checksum = type ^ action ^ value;
 
-        uint16_t combined = (high_byte << 4) & low_byte;
+        uint16_t combined = (static_cast<uint16_t>(high_byte) << 8) | low_byte;
 
-        std::cout << "Packet: 0x" << std::hex << static_cast<int>(combined)
+        std::cout << "Packet: 0x" 
+		  << std::hex << std::setw(4) << std::setfill('0') << combined
                   << " ["
                   << "Type=0x" << static_cast<int>(type) << " "
                   << "Action=0x" << static_cast<int>(action) << " "
