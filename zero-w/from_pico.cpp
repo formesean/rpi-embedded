@@ -78,7 +78,7 @@ int main()
           uint8_t checksum = low_byte & 0x0F;
           uint8_t expected_checksum = type ^ action ^ value;
 
-          std::cout << "Format: [" << std::hex
+          std::cout << " [" << std::hex
                     << "Type=0x" << static_cast<int>(type) << " "
                     << "Action=0x" << static_cast<int>(action) << " "
                     << "Value=0x" << static_cast<int>(value) << " "
