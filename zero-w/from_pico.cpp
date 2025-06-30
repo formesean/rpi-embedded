@@ -21,7 +21,6 @@ int main()
   {
     AikaPi &rpi = AikaPi::get_instance();
     rpi.aux.master_enable_spi(0);
-    rpi.spi.reg(AP::SPI::DLEN, 32);
 
     rpi.gpio.set(SCLK_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
     rpi.gpio.set(MISO_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
