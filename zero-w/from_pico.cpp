@@ -20,6 +20,7 @@ int main()
   {
     AikaPi &rpi = AikaPi::get_instance();
     rpi.aux.master_enable_spi(0);
+    rpi.spi.reg(AP::SPI::DLEN, 32);
 
     rpi.gpio.set(SCLK_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
     rpi.gpio.set(MISO_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
@@ -67,7 +68,7 @@ int main()
 
         uint16_t combined = (static_cast<uint16_t>(high_byte) << 8) | low_byte;
 
-        std::cout << "Packet: 0x" 
+        std::cout << "Packet: 0x"
 		  << std::hex << std::setw(4) << std::setfill('0') << combined
                   << " ["
                   << "Type=0x" << static_cast<int>(type) << " "
