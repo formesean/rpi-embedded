@@ -31,10 +31,6 @@ int main()
     auto &spi1 = rpi.aux.spi(0);
     spi1.enable();
     spi1.frequency(BAUD_RATE);
-    spi1.shift_length(16);
-    spi1.shift_out_ms_bit_first(true);
-    spi1.shift_in_ms_bit_first(true);
-    spi1.mode(AP::SPI::MODE::_0);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     std::cout << "Starting SPI communication with Pico..." << std::endl;
