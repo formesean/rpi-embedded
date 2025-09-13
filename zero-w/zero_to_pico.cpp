@@ -24,7 +24,7 @@ int main()
     rpi.gpio.set(SCLK_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
     rpi.gpio.set(MISO_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
     rpi.gpio.set(MOSI_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
-    rpi.gpio.set(CS_PIN, AP::GPIO::FUNC::OUTPUT, AP::GPIO::PULL::UP);
+    rpi.gpio.set(CS_PIN,   AP::GPIO::FUNC::OUTPUT, AP::GPIO::PULL::UP);
     rpi.gpio.write(CS_PIN, true);
 
     auto &spi1 = rpi.aux.spi(0);
@@ -43,9 +43,7 @@ int main()
         };
 
         rpi.gpio.write(CS_PIN, false);
-
         spi1.write(reinterpret_cast<char *>(tx_buf), PACKET_SIZE);
-
         rpi.gpio.write(CS_PIN, true);
 
         std::cout << "[MASTER] TX word: 0x"
