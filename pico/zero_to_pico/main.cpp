@@ -7,7 +7,7 @@
 
 #define PACKET_SIZE 2
 
-constexpr uint32_t SPI_BAUD = 20000000;
+constexpr uint32_t SPI_BAUD = 1000000;
 constexpr uint8_t PIN_SCK = 10;
 constexpr uint8_t PIN_MISO = 11;
 constexpr uint8_t PIN_MOSI = 12;
