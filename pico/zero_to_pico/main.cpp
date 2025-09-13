@@ -12,6 +12,7 @@ constexpr uint8_t PIN_SCK = 10;
 constexpr uint8_t PIN_MISO = 11;
 constexpr uint8_t PIN_MOSI = 12;
 constexpr uint8_t PIN_CS = 13;
+constexpr uint8_t LED_PIN = 25;
 
 void wait_for_usb_connect();
 void spi_slave_init();
@@ -21,6 +22,10 @@ int main()
 {
   wait_for_usb_connect();
   spi_slave_init();
+
+  gpio_init(LED_PIN);
+  gpio_set_dir(LED_PIN, GPIO_OUT);
+  gpio_put(LED_PIN, 0);
 
   while (true)
   {
@@ -62,7 +67,9 @@ void sendTestData()
   uint16_t tx_data = (static_cast<uint16_t>(high_byte) << 8) | low_byte;
   uint16_t rx_dummy = 0;
 
+  gpio_put(LED_PIN, 1);
   int result = spi_write16_read16_blocking(spi1, &tx_data, &rx_dummy, 1);
+  gpio_put(LED_PIN, 0);
 
   if (result == 1)
   {
