@@ -42,14 +42,8 @@ int main()
             static_cast<uint8_t>(tx_word & 0xFF)         // low byte
         };
 
-        // Assert CS
-        rpi.gpio.write(CS_PIN, false);
-
-        // Send 2 bytes
+        // Send 2 bytes (driver will assert/deassert CS on GPIO16)
         spi1.write(reinterpret_cast<char *>(tx_buf), PACKET_SIZE);
-
-        // Release CS
-        rpi.gpio.write(CS_PIN, true);
 
         std::cout << "[MASTER] TX word: 0x"
                   << std::uppercase << std::hex << std::setw(4)
