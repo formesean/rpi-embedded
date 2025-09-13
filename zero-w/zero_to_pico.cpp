@@ -8,10 +8,10 @@
 #define PACKET_SIZE 24
 
 constexpr uint32_t SPI_BAUD = 20000000;
-constexpr uint8_t PIN_SCK = 10;
-constexpr uint8_t PIN_MISO = 11;
-constexpr uint8_t PIN_MOSI = 12;
-constexpr uint8_t PIN_CS = 13;
+constexpr uint8_t PIN_SCK = 21;
+constexpr uint8_t PIN_MISO = 19;
+constexpr uint8_t PIN_MOSI = 20;
+constexpr uint8_t PIN_CS = 18;
 
 
 int main()
@@ -29,6 +29,10 @@ int main()
 
     auto &spi1 = rpi.aux.spi(0);
     spi1.enable();
+    spi1.mode(AP::SPI::MODE::_0);
+    spi1.shift_length(8);
+    spi1.shift_out_ms_bit_first(true);
+    spi1.shift_in_ms_bit_first(true);
     spi1.frequency(SPI_BAUD);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
@@ -43,15 +47,11 @@ int main()
           0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
 
-        rpi.gpio.write(PIN_CS, false);
-        std::this_thread::sleep_for(std::chrono::microseconds(50));
-
+        // Use library-controlled CE0 toggling during xfer
+        spi1.cs(0); // CE0 -> GPIO18
         spi1.xfer(reinterpret_cast<char *>(rx_buffer),
                   reinterpret_cast<char *>(tx_buffer),
                   PACKET_SIZE);
-
-        std::this_thread::sleep_for(std::chrono::microseconds(50));
-        rpi.gpio.write(PIN_CS, true);
 
         std::cout << "[LOGAN SPI] frame (24 bytes): ";
         std::cout << std::uppercase << std::hex << std::setfill('0');
