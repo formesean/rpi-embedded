@@ -36,17 +36,24 @@ int main()
     {
       try
       {
-        uint16_t tx_word = 0x12;
+        uint16_t tx_word = 0x1234;
+        uint8_t tx_buf[2] = {
+            static_cast<uint8_t>((tx_word >> 8) & 0xFF), // high byte
+            static_cast<uint8_t>(tx_word & 0xFF)         // low byte
+        };
 
+        // Assert CS
         rpi.gpio.write(CS_PIN, false);
 
-        spi1.write(reinterpret_cast<char *>(&tx_word), sizeof(tx_word));
+        // Send 2 bytes
+        spi1.write(reinterpret_cast<char *>(tx_buf), sizeof(tx_buf));
 
+        // Release CS
         rpi.gpio.write(CS_PIN, true);
 
-        std::cout << "[LOGAN SPI] TX 8-bit: ";
-        std::cout << std::uppercase << std::hex << std::setfill('0')
-                  << std::setw(4) << tx_word
+        std::cout << "[LOGAN SPI] TX word: 0x"
+                  << std::uppercase << std::hex << std::setw(4)
+                  << std::setfill('0') << tx_word
                   << std::dec << std::nouppercase << std::endl;
 
         std::this_thread::sleep_for(std::chrono::milliseconds(3000));
