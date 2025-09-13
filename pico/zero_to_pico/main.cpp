@@ -7,9 +7,10 @@
 #define PACKET_SIZE 2
 
 constexpr uint32_t SPI_BAUD = 20000000;
-constexpr uint8_t PIN_SCK = 10;
-constexpr uint8_t PIN_MISO = 11;
+constexpr uint8_t PIN_SCK  = 10;
+// In slave mode on RP2040: TX=GP11 (MISO), RX=GP12 (MOSI)
 constexpr uint8_t PIN_MOSI = 12;
+constexpr uint8_t PIN_MISO = 11;
 constexpr uint8_t PIN_CS = 13;
 
 void wait_for_usb_connect();
@@ -46,7 +47,7 @@ void wait_for_usb_connect()
 void spi_slave_init()
 {
   spi_init(spi1, SPI_BAUD);
-  spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+  spi_set_format(spi1, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
   spi_set_slave(spi1, true);
 
   gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
@@ -57,18 +58,18 @@ void spi_slave_init()
 
 void receiveTestData()
 {
-  uint8_t tx_dummy[PACKET_SIZE] = {0x00, 0x00};
-  uint8_t rx_buf[PACKET_SIZE]   = {0};
+  uint16_t tx_dummy = 0x0000;
+  uint16_t rx_word  = 0x0000;
 
-  int result = spi_write_read_blocking(spi1, tx_dummy, rx_buf, PACKET_SIZE);
+  int result = spi_write16_read16_blocking(spi1, &tx_dummy, &rx_word, 1);
 
-  if (result == PACKET_SIZE)
+  if (result == 1)
   {
-    uint16_t rx_word = (static_cast<uint16_t>(rx_buf[0]) << 8) |
-                       static_cast<uint16_t>(rx_buf[1]);
+    uint8_t rx_high = static_cast<uint8_t>((rx_word >> 8) & 0xFF);
+    uint8_t rx_low  = static_cast<uint8_t>(rx_word & 0xFF);
 
     printf("[SLAVE] RX word: 0x%04X (bytes: 0x%02X 0x%02X)\n",
-           rx_word, rx_buf[0], rx_buf[1]);
+           rx_word, rx_high, rx_low);
   }
   else
   {
