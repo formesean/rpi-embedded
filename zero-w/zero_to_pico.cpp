@@ -25,6 +25,7 @@ int main()
     rpi.gpio.set(MISO_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
     rpi.gpio.set(MOSI_PIN, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
     rpi.gpio.set(CS_PIN,   AP::GPIO::FUNC::OUTPUT, AP::GPIO::PULL::UP);
+    rpi.gpio.write(CS_PIN, true);
 
     auto &spi1 = rpi.aux.spi(0);
     spi1.enable();
@@ -40,7 +41,10 @@ int main()
       try
       {
         uint16_t tx_word = 0x1234;
+
+        rpi.gpio.write(CS_PIN, false);
         spi1.write(reinterpret_cast<char *>(&tx_word), sizeof(tx_word));
+        rpi.gpio.write(CS_PIN, true);
 
         std::cout << "[MASTER] TX word: 0x"
                   << std::uppercase << std::hex << std::setw(4)
