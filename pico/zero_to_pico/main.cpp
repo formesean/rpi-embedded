@@ -63,21 +63,44 @@ void receive_frames_blocking()
 
   while (true)
   {
-    int read_count = spi_read_blocking(spi1, tx_fill, rx_buffer, PACKET_SIZE);
-    if (read_count == PACKET_SIZE)
-    {
-      printf("RX (%d bytes): ", read_count);
-      for (int i = 0; i < PACKET_SIZE; ++i)
-      {
-        printf("%02X", rx_buffer[i]);
-        if (i + 1 < PACKET_SIZE) printf(" ");
+    int count = 0;
+    absolute_time_t deadline = make_timeout_time_ms(1000);
+
+    // Wait for first byte from master
+    while (!spi_is_readable(spi1) && !time_reached(deadline)) {
+      // keep TX FIFO primed so master reads defined data
+      if (spi_is_writable(spi1)) {
+        spi_get_hw(spi1)->dr = tx_fill;
       }
-      printf("\n");
+      tight_loop_contents();
     }
-    else
+
+    if (!spi_is_readable(spi1)) {
+      // no activity within timeout
+      continue;
+    }
+
+    // Read a full frame
+    while (count < PACKET_SIZE)
     {
-      printf("RX error, bytes: %d\n", read_count);
+      if (spi_is_readable(spi1))
+      {
+        rx_buffer[count++] = static_cast<uint8_t>(spi_get_hw(spi1)->dr);
+      }
+      // keep providing bytes to master while clocking
+      if (spi_is_writable(spi1))
+      {
+        spi_get_hw(spi1)->dr = tx_fill;
+      }
     }
+
+    printf("RX (%d bytes): ", count);
+    for (int i = 0; i < PACKET_SIZE; ++i)
+    {
+      printf("%02X", rx_buffer[i]);
+      if (i + 1 < PACKET_SIZE) printf(" ");
+    }
+    printf("\n");
     fflush(stdout);
   }
 }

@@ -11,7 +11,7 @@ constexpr uint32_t SPI_BAUD = 1000000;
 constexpr uint8_t PIN_SCK = 21;
 constexpr uint8_t PIN_MISO = 19;
 constexpr uint8_t PIN_MOSI = 20;
-constexpr uint8_t PIN_CS = 18;
+constexpr uint8_t PIN_CS = 16;
 
 
 int main()
@@ -47,8 +47,8 @@ int main()
           0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
         };
 
-        // Use library-controlled CE0 toggling during xfer
-        spi1.cs(0); // CE0 -> GPIO18
+        // Use library-controlled CE2 toggling during xfer (GPIO16)
+        spi1.cs(2);
         spi1.xfer(reinterpret_cast<char *>(rx_buffer),
                   reinterpret_cast<char *>(tx_buffer),
                   PACKET_SIZE);
