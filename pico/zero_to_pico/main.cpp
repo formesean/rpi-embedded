@@ -57,22 +57,22 @@ void spi_slave_init()
 
 void receiveTestData()
 {
-  uint8_t tx_dummy[2] = {0x00, 0x00};
-  uint8_t rx_buf[2]   = {0};
+  uint8_t tx_dummy[PACKET_SIZE] = {0x00, 0x00};
+  uint8_t rx_buf[PACKET_SIZE]   = {0};
 
-  int result = spi_write_read_blocking(spi1, tx_dummy, rx_buf, 2);
+  int result = spi_write_read_blocking(spi1, tx_dummy, rx_buf, PACKET_SIZE);
 
-  if (result == 2)
+  if (result == PACKET_SIZE)
   {
     uint16_t rx_word = (static_cast<uint16_t>(rx_buf[0]) << 8) |
                        static_cast<uint16_t>(rx_buf[1]);
 
-    printf("Packet Received: 0x%04X (bytes: 0x%02X 0x%02X)\n",
+    printf("[SLAVE] RX word: 0x%04X (bytes: 0x%02X 0x%02X)\n",
            rx_word, rx_buf[0], rx_buf[1]);
   }
   else
   {
-    printf("SPI receive failed\n");
+    printf("[SLAVE] SPI receive failed\n");
   }
 
   fflush(stdout);
