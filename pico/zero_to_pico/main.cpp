@@ -8,9 +8,8 @@
 
 constexpr uint32_t SPI_BAUD = 20000000;
 constexpr uint8_t PIN_SCK  = 10;
-// In slave mode on RP2040: TX=GP11 (MISO), RX=GP12 (MOSI)
-constexpr uint8_t PIN_MOSI = 12;
 constexpr uint8_t PIN_MISO = 11;
+constexpr uint8_t PIN_MOSI = 12;
 constexpr uint8_t PIN_CS = 13;
 
 void wait_for_usb_connect();
