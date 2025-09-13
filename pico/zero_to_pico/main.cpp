@@ -2,8 +2,8 @@
 #include "hardware/spi.h"
 
 #include <stdio.h>
-#include <iostream>
 #include <cstdint>
+#include <iostream>
 
 #define PACKET_SIZE 2
 
