@@ -5,7 +5,7 @@
 #include <thread>
 #include <chrono>
 
-#define BAUD_RATE 1000000
+#define BAUD_RATE 20000000
 #define CS_PIN 16
 #define MISO_PIN 19
 #define MOSI_PIN 20
@@ -36,15 +36,19 @@ int main()
     {
       try
       {
-        uint16_t tx_word = 0x1234;
+        uint16_t tx_word = 0x12;
 
-        spi1.cs(2);
+        rpi.gpio.write(CS_PIN, false);
+
         spi1.write(reinterpret_cast<char *>(&tx_word), sizeof(tx_word));
 
-        std::cout << "[LOGAN SPI] TX 16-bit: ";
+        rpi.gpio.write(CS_PIN, true);
+
+        std::cout << "[LOGAN SPI] TX 8-bit: ";
         std::cout << std::uppercase << std::hex << std::setfill('0')
                   << std::setw(4) << tx_word
                   << std::dec << std::nouppercase << std::endl;
+
         std::this_thread::sleep_for(std::chrono::milliseconds(3000));
       }
       catch (const std::exception &inner_e)
