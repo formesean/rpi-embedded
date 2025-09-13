@@ -3,7 +3,6 @@
 
 #include <stdio.h>
 #include <cstdint>
-#include <iostream>
 
 #define PACKET_SIZE 2
 

@@ -36,22 +36,15 @@ int main()
     {
       try
       {
-        uint8_t rx_buffer[PACKET_SIZE] = {0};
-        uint8_t tx_buffer[PACKET_SIZE] = { 0x12, 0x34 };
+        uint16_t tx_word = 0x1234;
 
         spi1.cs(2);
-        spi1.xfer(reinterpret_cast<char *>(rx_buffer),
-                  reinterpret_cast<char *>(tx_buffer),
-                  PACKET_SIZE);
+        spi1.write(reinterpret_cast<char *>(&tx_word), sizeof(tx_word));
 
         std::cout << "[LOGAN SPI] TX 16-bit: ";
-        std::cout << std::uppercase << std::hex << std::setfill('0');
-        uint16_t txw = (static_cast<uint16_t>(tx_buffer[0]) << 8) | tx_buffer[1];
-        std::cout << std::setw(4) << txw;
-        std::cout << std::dec << std::nouppercase << std::endl;
-        uint16_t rxw = (static_cast<uint16_t>(rx_buffer[0]) << 8) | rx_buffer[1];
-        std::cout << "[LOGAN SPI] RX 16-bit: " << std::uppercase << std::hex << std::setfill('0')
-                  << std::setw(4) << rxw << std::dec << std::nouppercase << std::endl;
+        std::cout << std::uppercase << std::hex << std::setfill('0')
+                  << std::setw(4) << tx_word
+                  << std::dec << std::nouppercase << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(3000));
       }
       catch (const std::exception &inner_e)
