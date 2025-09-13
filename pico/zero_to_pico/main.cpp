@@ -4,7 +4,7 @@
 #include <stdio.h>
 #include <cstdint>
 
-#define PACKET_SIZE 24
+#define PACKET_SIZE 2
 
 constexpr uint32_t SPI_BAUD = 1000000;
 constexpr uint8_t PIN_SCK = 10;
@@ -41,8 +41,8 @@ void wait_for_usb_connect()
 void spi_slave_init()
 {
   spi_init(spi1, SPI_BAUD);
-  // Match RPi master: 8-bit, mode 0 (CPOL=0, CPHA=0), MSB first
-  spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+  // Match RPi master: 16-bit, mode 0 (CPOL=0, CPHA=0), MSB first
+  spi_set_format(spi1, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
   spi_set_slave(spi1, true);
 
   gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
@@ -58,8 +58,8 @@ void spi_slave_init()
 
 void receive_frames_blocking()
 {
-  uint8_t rx_buffer[PACKET_SIZE];
-  const uint8_t tx_fill = 0x00;
+  uint16_t rx_word = 0;
+  const uint16_t tx_fill = 0x0000;
 
   while (true)
   {
@@ -80,27 +80,26 @@ void receive_frames_blocking()
       continue;
     }
 
-    // Read a full frame
-    while (count < PACKET_SIZE)
+    // Read a single 16-bit frame (2 bytes)
+    while (count < 2)
     {
       if (spi_is_readable(spi1))
       {
-        rx_buffer[count++] = static_cast<uint8_t>(spi_get_hw(spi1)->dr);
+        uint16_t dr = static_cast<uint16_t>(spi_get_hw(spi1)->dr);
+        if (count == 0) {
+          rx_word = (dr & 0xFF) << 8; // high byte first if MSB-first
+        } else {
+          rx_word |= (dr & 0xFF);
+        }
+        count++;
       }
-      // keep providing bytes to master while clocking
       if (spi_is_writable(spi1))
       {
         spi_get_hw(spi1)->dr = tx_fill;
       }
     }
 
-    printf("RX (%d bytes): ", count);
-    for (int i = 0; i < PACKET_SIZE; ++i)
-    {
-      printf("%02X", rx_buffer[i]);
-      if (i + 1 < PACKET_SIZE) printf(" ");
-    }
-    printf("\n");
+    printf("RX 16-bit: 0x%04X\n", rx_word);
     fflush(stdout);
   }
 }

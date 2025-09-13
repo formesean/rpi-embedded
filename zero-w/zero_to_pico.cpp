@@ -5,7 +5,7 @@
 #include <thread>
 #include <chrono>
 
-#define PACKET_SIZE 24
+#define PACKET_SIZE 2
 
 constexpr uint32_t SPI_BAUD = 1000000;
 constexpr uint8_t PIN_SCK = 21;
@@ -30,7 +30,7 @@ int main()
     auto &spi1 = rpi.aux.spi(0);
     spi1.enable();
     spi1.mode(AP::SPI::MODE::_0);
-    spi1.shift_length(8);
+    spi1.shift_length(16);
     spi1.shift_out_ms_bit_first(true);
     spi1.shift_in_ms_bit_first(true);
     spi1.frequency(SPI_BAUD);
@@ -41,11 +41,7 @@ int main()
       try
       {
         uint8_t rx_buffer[PACKET_SIZE] = {0};
-        uint8_t tx_buffer[PACKET_SIZE] = {
-          0x4C, 0x43, 0x46, 0x47, 0x01, 0x01, 0x00, 0x04,
-          0xD0, 0x07, 0x00, 0x00, 0x00, 0x00, 0x48, 0x42,
-          0x0F, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-        };
+        uint8_t tx_buffer[PACKET_SIZE] = { 0x12, 0x34 };
 
         // Use library-controlled CE2 toggling during xfer (GPIO16)
         spi1.cs(2);
@@ -53,14 +49,14 @@ int main()
                   reinterpret_cast<char *>(tx_buffer),
                   PACKET_SIZE);
 
-        std::cout << "[LOGAN SPI] frame (24 bytes): ";
+        std::cout << "[LOGAN SPI] TX 16-bit: ";
         std::cout << std::uppercase << std::hex << std::setfill('0');
-        for (size_t i = 0; i < PACKET_SIZE; ++i)
-        {
-          std::cout << std::setw(2) << static_cast<int>(tx_buffer[i]);
-          if (i + 1 < PACKET_SIZE) std::cout << " ";
-        }
+        uint16_t txw = (static_cast<uint16_t>(tx_buffer[0]) << 8) | tx_buffer[1];
+        std::cout << std::setw(4) << txw;
         std::cout << std::dec << std::nouppercase << std::endl;
+        uint16_t rxw = (static_cast<uint16_t>(rx_buffer[0]) << 8) | rx_buffer[1];
+        std::cout << "[LOGAN SPI] RX 16-bit: " << std::uppercase << std::hex << std::setfill('0')
+                  << std::setw(4) << rxw << std::dec << std::nouppercase << std::endl;
         std::this_thread::sleep_for(std::chrono::milliseconds(3000));
       }
       catch (const std::exception &inner_e)
