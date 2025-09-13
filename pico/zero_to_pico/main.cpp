@@ -46,7 +46,7 @@ void wait_for_usb_connect()
 void spi_slave_init()
 {
   spi_init(spi1, SPI_BAUD);
-  spi_set_format(spi1, 8, 0, 0, SPI_MSB_FIRST);
+  spi_set_format(spi1, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
   spi_set_slave(spi1, true);
 
   gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
