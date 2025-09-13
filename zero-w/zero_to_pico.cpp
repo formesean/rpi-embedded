@@ -30,17 +30,13 @@ int main()
     auto &spi1 = rpi.aux.spi(0);
     spi1.enable();
     spi1.frequency(BAUD_RATE);
-    spi1.mode(AP::SPI::MODE::_0);
-    spi1.shift_length(8);
-    spi1.cs(2);
-    spi1.cs_polarity(0);
 
     std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     while (true)
     {
       try
       {
-        uint16_t tx_word = 0x1234;
+        uint16_t tx_word = 0x4321;
         uint8_t tx_buf[PACKET_SIZE] = {
             static_cast<uint8_t>((tx_word >> 8) & 0xFF), // high byte
             static_cast<uint8_t>(tx_word & 0xFF)         // low byte
