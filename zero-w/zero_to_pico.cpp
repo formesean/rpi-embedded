@@ -1,78 +1,78 @@
-#include "pico/stdlib.h"
-#include "hardware/spi.h"
+#include "../lib/AikaPi/AikaPi.h"
 
-#include <stdio.h>
 #include <iostream>
-#include <cstdint>
+#include <iomanip>
+#include <thread>
+#include <chrono>
 
 #define PACKET_SIZE 2
 
 constexpr uint32_t SPI_BAUD = 1000000;
-constexpr uint8_t PIN_SCK = 10;
-constexpr uint8_t PIN_MISO = 11;
-constexpr uint8_t PIN_MOSI = 12;
-constexpr uint8_t PIN_CS = 13;
+constexpr uint8_t PIN_SCK = 21;
+constexpr uint8_t PIN_MISO = 19;
+constexpr uint8_t PIN_MOSI = 20;
+constexpr uint8_t PIN_CS = 16;
 
-void wait_for_usb_connect();
-void spi_slave_init();
-void receiveTestData();
 
 int main()
 {
-  wait_for_usb_connect();
-  spi_slave_init();
-
-  while (true)
+  try
   {
-    receiveTestData();
-    sleep_ms(100);
+    AikaPi &rpi = AikaPi::get_instance();
+    rpi.aux.master_enable_spi(0);
+
+    rpi.gpio.set(PIN_SCK, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
+    rpi.gpio.set(PIN_MISO, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
+    rpi.gpio.set(PIN_MOSI, AP::GPIO::FUNC::ALT4, AP::GPIO::PULL::OFF);
+    rpi.gpio.set(PIN_CS, AP::GPIO::FUNC::OUTPUT, AP::GPIO::PULL::UP);
+    rpi.gpio.write(PIN_CS, true);
+
+    auto &spi1 = rpi.aux.spi(0);
+    spi1.enable();
+    spi1.mode(AP::SPI::MODE::_0);
+    spi1.shift_length(16);
+    spi1.shift_out_ms_bit_first(true);
+    spi1.shift_in_ms_bit_first(true);
+    spi1.frequency(SPI_BAUD);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+    while (true)
+    {
+      try
+      {
+        uint8_t rx_buffer[PACKET_SIZE] = {0};
+        uint8_t tx_buffer[PACKET_SIZE] = { 0x12, 0x34 };
+
+        // Use library-controlled CE2 toggling during xfer (GPIO16)
+        spi1.cs(2);
+        spi1.xfer(reinterpret_cast<char *>(rx_buffer),
+                  reinterpret_cast<char *>(tx_buffer),
+                  PACKET_SIZE);
+
+        std::cout << "[LOGAN SPI] TX 16-bit: ";
+        std::cout << std::uppercase << std::hex << std::setfill('0');
+        uint16_t txw = (static_cast<uint16_t>(tx_buffer[0]) << 8) | tx_buffer[1];
+        std::cout << std::setw(4) << txw;
+        std::cout << std::dec << std::nouppercase << std::endl;
+        uint16_t rxw = (static_cast<uint16_t>(rx_buffer[0]) << 8) | rx_buffer[1];
+        std::cout << "[LOGAN SPI] RX 16-bit: " << std::uppercase << std::hex << std::setfill('0')
+                  << std::setw(4) << rxw << std::dec << std::nouppercase << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+      }
+      catch (const std::exception &inner_e)
+      {
+        std::cerr << "Transaction error: " << inner_e.what() << std::endl;
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+      }
+    }
   }
-}
-
-void wait_for_usb_connect()
-{
-  stdio_init_all();
-
-  absolute_time_t timeout = make_timeout_time_ms(5000);
-  while (!stdio_usb_connected() && !time_reached(timeout))
-    sleep_ms(10);
-
-  sleep_ms(100);
-}
-
-void spi_slave_init()
-{
-  spi_init(spi1, SPI_BAUD);
-  spi_set_format(spi1, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-  spi_set_slave(spi1, true);
-
-  gpio_set_function(PIN_SCK, GPIO_FUNC_SPI);
-  gpio_set_function(PIN_MISO, GPIO_FUNC_SPI);
-  gpio_set_function(PIN_MOSI, GPIO_FUNC_SPI);
-  gpio_set_function(PIN_CS, GPIO_FUNC_SPI);
-}
-
-void receiveTestData()
-{
-  uint16_t tx_dummy = 0x0000;
-  uint16_t rx_data = 0;
-
-  int result = spi_write16_read16_blocking(spi1, &tx_dummy, &rx_data, 1);
-
-  if (result == 1)
+  catch (const std::exception &e)
   {
-    uint8_t high_byte = static_cast<uint8_t>((rx_data >> 8) & 0xFF);
-    uint8_t low_byte = static_cast<uint8_t>(rx_data & 0xFF);
-
-    printf("Packet Received: 0x%04X (bytes: 0x%02X 0x%02X)\n",
-           rx_data, high_byte, low_byte);
-  }
-  else
-  {
-    printf("SPI receive failed\n");
+    std::cerr << "Initialization error: " << e.what() << std::endl;
+    return -1;
   }
 
-  fflush(stdout);
+  return 0;
 }
 
 // EOF
