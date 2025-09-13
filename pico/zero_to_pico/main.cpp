@@ -73,8 +73,11 @@ void sendTestData()
 
   if (result == 1)
   {
-    printf("Packet Sent: 0x%04X (bytes: 0x%02X 0x%02X)\n",
-           tx_data, high_byte, low_byte);
+    uint8_t rx_high_byte = (rx_dummy >> 8) & 0xFF;
+    uint8_t rx_low_byte = rx_dummy & 0xFF;
+
+    printf("Packet Sent: 0x%04X (bytes: 0x%02X 0x%02X) | Received: 0x%04X (bytes: 0x%02X 0x%02X)\n",
+           tx_data, high_byte, low_byte, rx_dummy, rx_high_byte, rx_low_byte);
   }
   else
   {

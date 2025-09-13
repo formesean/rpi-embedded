@@ -37,7 +37,7 @@ int main()
       try
       {
         uint8_t rx_buffer[PACKET_SIZE] = {0};
-        uint8_t tx_buffer[PACKET_SIZE] = {0x00, 0x00};
+        uint8_t tx_buffer[PACKET_SIZE] = {0x67, 0x89};
 
         rpi.gpio.write(CS_PIN, false);
         std::this_thread::sleep_for(std::chrono::microseconds(50));
