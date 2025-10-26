@@ -44,9 +44,9 @@ public:
     cancel_repeating_timer(timer);
   }
 
-  static inline uint16_t build_header_word(uint8_t channel_1to4, uint8_t trig_mode, uint8_t samples_nib, uint8_t rate_nib)
+  static inline uint16_t build_header_word(uint8_t channel_1to4, uint8_t trig_mode, uint8_t samples_nib, uint8_t rate_nib, bool continuous = true)
   {
-    uint8_t type_nib = static_cast<uint8_t>(0x8 | (channel_1to4 & 0x07));
+    uint8_t type_nib = static_cast<uint8_t>(((continuous ? 0x8 : 0x0)) | (channel_1to4 & 0x07));
     return static_cast<uint16_t>(((type_nib   & 0x0F) << 12) |
                                  ((trig_mode  & 0x0F) << 8)  |
                                  ((samples_nib& 0x0F) << 4)  |

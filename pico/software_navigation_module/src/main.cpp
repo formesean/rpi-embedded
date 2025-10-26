@@ -835,7 +835,8 @@ void process_buffered_events()
           g_logan_tx_next_channel,
           0,
           g_logan_samples_nibble,
-          g_logan_rate_nibble);
+          g_logan_rate_nibble,
+          g_logan_continuous);
 
         SPIComm::configure_custom_header(header_word, payload_words);
         SPIComm::set_logan_payload(packed_words, payload_words);
